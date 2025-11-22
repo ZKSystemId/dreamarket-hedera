@@ -63,13 +63,8 @@ export async function ensureSoulAssociated(
       ? Client.forTestnet() 
       : Client.forMainnet();
 
-    // Set a dummy operator (required for transaction creation, but won't be used for signing)
-    // The actual signing will be done by user's wallet
-    client.setOperator(
-      AccountId.fromString(accountId),
-      // Dummy key - won't be used since user will sign via wallet
-      "302e020100300506032b65700422042000000000000000000000000000000000000000000000000000000000000000000"
-    );
+    // IMPORTANT: We don't set operator here because user will sign via wallet
+    // Transaction will be created without operator and signed by user's wallet
 
     // Create TokenAssociateTransaction
     const associateTx = new TokenAssociateTransaction()
