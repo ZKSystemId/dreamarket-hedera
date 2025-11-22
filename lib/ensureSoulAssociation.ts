@@ -55,22 +55,11 @@ export async function ensureSoulAssociated(
   console.log(`\n⚠️  Not associated yet. Creating TokenAssociateTransaction...`);
 
   try {
-    // Import Client dynamically to avoid SSR issues
-    const { Client } = await import("@hashgraph/sdk");
-
-    // Create client for the network
-    const client = network === "testnet" 
-      ? Client.forTestnet() 
-      : Client.forMainnet();
-
-    // IMPORTANT: We don't set operator here because user will sign via wallet
-    // Transaction will be created without operator and signed by user's wallet
-
     // Create TokenAssociateTransaction
+    // NOTE: We don't freeze it here - let the wallet/sendTransaction handle freezing
     const associateTx = new TokenAssociateTransaction()
       .setAccountId(AccountId.fromString(accountId))
-      .setTokenIds([TokenId.fromString(soulTokenId)])
-      .freezeWith(client);
+      .setTokenIds([TokenId.fromString(soulTokenId)]);
 
     console.log(`📝 TokenAssociateTransaction created`);
     console.log(`   Account: ${accountId}`);
@@ -101,8 +90,6 @@ export async function ensureSoulAssociated(
     }
 
     console.log(`${'='.repeat(60)}\n`);
-
-    client.close();
   } catch (error: any) {
     console.error(`\n❌ Association failed:`, error);
     console.log(`${'='.repeat(60)}\n`);
