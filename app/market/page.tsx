@@ -7,6 +7,7 @@ import { AgentFilters } from "@/components/agents/AgentFilters";
 import { AgentGrid } from "@/components/agents/AgentGrid";
 import { fetchSouls } from "@/lib/hederaClient";
 import { FilterOptions, SoulAgent } from "@/types/agent";
+import { AlertCircle } from "lucide-react";
 
 export default function MarketPage() {
   const [allSouls, setAllSouls] = useState<SoulAgent[]>([]);
@@ -132,7 +133,7 @@ export default function MarketPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
+            className="mb-8"
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Soul <span className="text-gradient">Marketplace</span>
@@ -142,11 +143,30 @@ export default function MarketPage() {
             </p>
           </motion.div>
 
-          {/* Filters */}
+          {/* Important Notice */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-amber-500 mb-1">Important Notice</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please create at least <span className="font-semibold text-foreground">1 Soul NFT</span> before purchasing from the marketplace, 
+                  or you will not receive the NFT. This is required for token association with your wallet.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
             className="mb-8"
           >
             <AgentFilters filters={filters} onFiltersChange={setFilters} />
@@ -156,7 +176,7 @@ export default function MarketPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
             className="mb-6 flex items-center justify-between"
           >
             {loading ? (
@@ -179,7 +199,7 @@ export default function MarketPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.4 }}
           >
             {loading ? (
               <div className="text-center py-12">
