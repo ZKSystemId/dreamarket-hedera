@@ -1,0 +1,193 @@
+// Prisma Schema for DreamMarket - The Marketplace of Digital Souls
+// Database: PostgreSQL
+// ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Rarity {
+  Common
+  Rare
+  Legendary
+  Mythic
+}
+
+enum SoulEventType {
+  MINTED
+  TRANSFERRED
+  REPUTATION_UPDATED
+  MEMORY_UPDATED
+  FUSED
+  EVOLVED
+  RENTED
+  LISTED
+  DELISTED
+  OTHER
+}
+
+enum InteractionRole {
+  USER
+  SOUL
+  SYSTEM
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+/// User represents a wallet holder who can own and interact with souls
+model User {
+  id              String   @id @default(uuid())
+  walletAddress   String   @unique
+  displayName     String?
+  email           String?
+  avatarUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  ownedSouls      Soul[]            @relation("SoulOwner")
+  interactions    SoulInteraction[]
+  fusionsCreated  Fusion[]          @relation("FusionCreator")
+
+  @@index([walletAddress])
+  @@map("users")
+}
+
+/// Soul represents an AI agent with on-chain identity (NFT)
+model Soul {
+  id                String   @id @default(uuid())
+  name              String
+  tagline           String
+  rarity            Rarity   @default(Common)
+  avatarSeed        String?
+  personality       String   @db.Text
+  skills            String[] // Array of skill strings
+  creationStory     String   @db.Text
+  reputation        Int      @default(50) // 0-100 scale
+  
+  // Owner relationship
+  ownerId           String
+  owner             User     @relation("SoulOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // Hedera blockchain data
+  tokenId           String?  @unique
+  creationTxHash    String?
+  lastUpdateTxHash  String?
+  
+  // Metadata
+  isListed          Boolean  @default(false)
+  listingPrice      Float?
+  totalInteractions Int      @default(0)
+  totalOwners       Int      @default(1)
+  lastActiveAt      DateTime @default(now())
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  events            SoulEvent[]
+  interactions      SoulInteraction[]
+  fusionsAsParentA  Fusion[]          @relation("ParentSoulA")
+  fusionsAsParentB  Fusion[]          @relation("ParentSoulB")
+  fusionAsChild     Fusion?           @relation("ChildSoul")
+
+  @@index([ownerId])
+  @@index([rarity])
+  @@index([reputation])
+  @@index([tokenId])
+  @@index([isListed])
+  @@index([createdAt])
+  @@map("souls")
+}
+
+/// SoulEvent tracks the history and timeline of a soul
+model SoulEvent {
+  id          String        @id @default(uuid())
+  soulId      String
+  soul        Soul          @relation(fields: [soulId], references: [id], onDelete: Cascade)
+  
+  type        SoulEventType
+  description String        @db.Text
+  txHash      String?
+  metadata    Json?         // Additional event-specific data
+  
+  createdAt   DateTime      @default(now())
+
+  @@index([soulId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("soul_events")
+}
+
+/// SoulInteraction stores chat/memory logs between users and souls
+model SoulInteraction {
+  id           String          @id @default(uuid())
+  soulId       String
+  soul         Soul            @relation(fields: [soulId], references: [id], onDelete: Cascade)
+  
+  userId       String?
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  role         InteractionRole
+  content      String          @db.Text
+  
+  // Hedera Consensus Service (HCS) reference
+  hashOnChain  String?         // HCS message ID or hash
+  topicId      String?         // HCS topic ID
+  
+  metadata     Json?           // Additional context (e.g., sentiment, tokens used)
+  
+  createdAt    DateTime        @default(now())
+
+  @@index([soulId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("soul_interactions")
+}
+
+/// Fusion represents the merging of two parent souls into a new child soul
+model Fusion {
+  id              String   @id @default(uuid())
+  
+  // Child soul (result of fusion)
+  childSoulId     String   @unique
+  childSoul       Soul     @relation("ChildSoul", fields: [childSoulId], references: [id], onDelete: Cascade)
+  
+  // Parent souls
+  parentSoulAId   String
+  parentSoulA     Soul     @relation("ParentSoulA", fields: [parentSoulAId], references: [id], onDelete: Restrict)
+  
+  parentSoulBId   String
+  parentSoulB     Soul     @relation("ParentSoulB", fields: [parentSoulBId], references: [id], onDelete: Restrict)
+  
+  // Creator of the fusion
+  creatorId       String
+  creator         User     @relation("FusionCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  
+  // Blockchain data
+  fusionTxHash    String?
+  
+  // Fusion metadata
+  fusionFormula   String?  // Algorithm or method used
+  inheritedTraits Json?    // Traits inherited from parents
+  
+  createdAt       DateTime @default(now())
+
+  @@index([childSoulId])
+  @@index([parentSoulAId])
+  @@index([parentSoulBId])
+  @@index([creatorId])
+  @@map("fusions")
+}
